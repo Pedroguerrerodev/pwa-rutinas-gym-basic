@@ -35,6 +35,7 @@ type RoutineExerciseDraft = Omit<AdminRoutineExercise, 'id' | 'exercises'> & {
 
 const routineLevelOptions = ['Principiante', 'Intermedio', 'Avanzado'] as const
 const routineDayOptions = ['1 día', '2 días', '3 días', '4 días', '5 días', '6 días', '7 días'] as const
+const routineSetOptions = [1, 2, 3, 4, 5, 6] as const
 const muscleGroupOptions = [
     'Pierna',
     'Pecho',
@@ -137,6 +138,10 @@ function getRoutineDayOptions(durationText: string, entries: Array<{ day_number:
     return Array.from({ length: totalDays }, (_, index) => index + 1)
 }
 
+function getMinimumEditableRoutineDays(entries: Array<{ day_number: number }>) {
+    return entries.length > 0 ? Math.max(...entries.map((entry) => entry.day_number || 1), 1) : 1
+}
+
 function getExerciseOptionLabel(exercise: { name: string; muscle_group: string } | null | undefined) {
     if (!exercise) {
         return ''
@@ -216,7 +221,7 @@ function buildRoutineExerciseDraft(routineId: string, sortOrder: number): Routin
 function DashboardStat({ label, value, helper }: { label: string; value: string; helper: string }) {
     return (
         <article className="metric-card">
-            <div className="section-kicker">Métrica viva</div>
+            <div className="section-kicker">Resumen del gym</div>
             <div className="stat-value">{value}</div>
             <div className="card-title">{label}</div>
             <div className="metric-copy">{helper}</div>
@@ -330,7 +335,9 @@ export function AdminDashboardPage() {
             const matchesGroup =
                 selectedMuscleGroup === 'Todas' || exercise.muscle_group === selectedMuscleGroup
             const matchesSearch =
-                normalizedSearch.length === 0 || exercise.name.toLowerCase().includes(normalizedSearch)
+                normalizedSearch.length === 0 ||
+                exercise.name.toLowerCase().includes(normalizedSearch) ||
+                exercise.slug.toLowerCase().includes(normalizedSearch)
 
             return matchesGroup && matchesSearch
         })
@@ -403,29 +410,29 @@ export function AdminDashboardPage() {
         {
             label: 'Categorías activas',
             value: String(categories.filter((category) => category.is_active).length),
-            helper: 'Visibles en el catálogo público',
+            helper: 'Listas para mostrarse a tus clientes',
         },
         {
             label: 'Rutinas publicadas',
             value: String(routines.filter((routine) => routine.is_published).length),
-            helper: 'Disponibles para socios ahora mismo',
+            helper: 'Disponibles para entrenar ahora mismo',
         },
         {
             label: 'Ejercicios base',
             value: String(exercises.length),
-            helper: 'Biblioteca lista para enlazar',
+            helper: 'Base de ejercicios preparada para tus rutinas',
         },
     ]
 
     return (
         <main>
-            <div className="eyebrow">Dashboard conectado a Supabase</div>
+            <div className="eyebrow">Panel de gestión del gym</div>
             <h1 className="hero-title">
-                Control total del <span className="accent-text">catálogo</span>
+                Organiza tus <span className="accent-text">rutinas y servicios</span>
             </h1>
             <p className="admin-copy">
-                El portal ya escribe en la base real. Desde aquí puedes crear, editar y retirar
-                categorías, rutinas, ejercicios y los ejercicios que componen cada rutina.
+                Gestiona categorías, ejercicios y rutinas desde un solo lugar para mantener la
+                oferta del gimnasio siempre clara, actualizada y lista para tus clientes.
             </p>
 
             <div className="inline-actions section">
@@ -468,7 +475,7 @@ export function AdminDashboardPage() {
 
             {error ? <div className="admin-feedback is-error section">{error}</div> : null}
             {feedback ? <div className="admin-feedback section">{feedback}</div> : null}
-            {loading ? <div className="empty-state section">Sincronizando panel admin...</div> : null}
+            {loading ? <div className="empty-state section">Actualizando contenido del panel...</div> : null}
 
             {activePanel === 'overview' && (
                 <section className="stats-grid section">
@@ -480,7 +487,7 @@ export function AdminDashboardPage() {
                 <section className="admin-grid section">
                     <article className="admin-card">
                         <div className="section-kicker">Nueva categoría</div>
-                        <h2 className="section-title">Ordena el catálogo</h2>
+                        <h2 className="section-title">Organiza tu oferta</h2>
                         <div className="form-grid">
                             <input
                                 className="data-input"
@@ -530,8 +537,8 @@ export function AdminDashboardPage() {
             {activePanel === 'exercises' && (
                 <section className="admin-grid section">
                     <article className="admin-card">
-                        <div className="section-kicker">Biblioteca de ejercicios</div>
-                        <h2 className="section-title">Nuevo ejercicio</h2>
+                        <div className="section-kicker">Ejercicios del gym</div>
+                        <h2 className="section-title">Añadir ejercicio</h2>
                         <div className="form-grid">
                             <input
                                 className="data-input"
@@ -573,7 +580,7 @@ export function AdminDashboardPage() {
             {activePanel === 'categories' && <section className="section panel">
                 <div className="topbar" style={{ marginBottom: 14 }}>
                     <h2 className="section-title">Categorías</h2>
-                    <div className="section-kicker">Edición en vivo</div>
+                    <div className="section-kicker">Ajustes rápidos</div>
                 </div>
 
                 <div className="admin-record-list">
@@ -657,7 +664,7 @@ export function AdminDashboardPage() {
             {activePanel === 'exercises' && <section className="section panel">
                 <div className="topbar" style={{ marginBottom: 14 }}>
                     <h2 className="section-title">Ejercicios base</h2>
-                    <div className="section-kicker">Guardar o eliminar</div>
+                    <div className="section-kicker">Gestiona tu base de ejercicios</div>
                 </div>
 
                 <section className="search-shell admin-routine-toolbar">
@@ -776,8 +783,8 @@ export function AdminDashboardPage() {
 
             {activePanel === 'routines' && <section className="section panel">
                 <div className="topbar" style={{ marginBottom: 14 }}>
-                    <h2 className="section-title">Rutinas y ejercicios</h2>
-                    <div className="section-kicker">Edición compacta</div>
+                    <h2 className="section-title">Rutinas del gym</h2>
+                    <div className="section-kicker">Edita y organiza sesiones</div>
                 </div>
 
                 <section className="search-shell admin-routine-toolbar">
@@ -811,10 +818,11 @@ export function AdminDashboardPage() {
                     {filteredRoutines.map((routine) => {
                         const index = editableRoutines.findIndex((entry) => entry.id === routine.id)
                         const isExpanded = expandedRoutineId === routine.id
-                        const routineDayOptions = getRoutineDayOptions(
+                        const routineDaySections = getRoutineDayOptions(
                             routine.duration_text,
                             routine.routine_exercises,
                         )
+                        const minimumEditableRoutineDays = getMinimumEditableRoutineDays(routine.routine_exercises)
 
                         return (
                             <div className="admin-record admin-record-large" key={routine.id}>
@@ -909,13 +917,27 @@ export function AdminDashboardPage() {
                                                     }
                                                     value={normalizeRoutineDays(routine.duration_text)}
                                                 >
-                                                    {routineDayOptions.map((dayOption) => (
-                                                        <option key={dayOption} value={dayOption}>
-                                                            {dayOption}
-                                                        </option>
-                                                    ))}
+                                                    {routineDayOptions.map((dayOption) => {
+                                                        const dayCount = Number(dayOption.match(/[1-7]/)?.[0] ?? '1')
+
+                                                        return (
+                                                            <option
+                                                                disabled={dayCount < minimumEditableRoutineDays}
+                                                                key={dayOption}
+                                                                value={dayOption}
+                                                            >
+                                                                {dayOption}
+                                                                {dayCount < minimumEditableRoutineDays ? ' · ocupado' : ''}
+                                                            </option>
+                                                        )
+                                                    })}
                                                 </select>
                                             </div>
+                                            {minimumEditableRoutineDays > 1 ? (
+                                                <div className="metric-copy">
+                                                    Puedes ampliar hasta 7 días. Para reducir, primero mueve o elimina los ejercicios del día {minimumEditableRoutineDays} en adelante.
+                                                </div>
+                                            ) : null}
                                             <div className="admin-two-columns">
                                                 <select
                                                     className="search-select"
@@ -990,7 +1012,7 @@ export function AdminDashboardPage() {
                                         <div className="section">
                                             <div className="section-kicker">Ejercicios asignados</div>
                                             <div className="support-grid admin-block-list">
-                                                {routineDayOptions.map((dayNumber) => {
+                                                {routineDaySections.map((dayNumber) => {
                                                     const dayEntries = routine.routine_exercises.filter(
                                                         (routineExercise) => (routineExercise.day_number || 1) === dayNumber,
                                                     )
@@ -1103,22 +1125,21 @@ export function AdminDashboardPage() {
                                                                                             }
                                                                                             value={routineExercise.day_number || 1}
                                                                                         >
-                                                                                            {routineDayOptions.map((optionDay) => (
+                                                                                            {routineDaySections.map((optionDay) => (
                                                                                                 <option key={optionDay} value={optionDay}>
                                                                                                     Día {optionDay}
                                                                                                 </option>
                                                                                             ))}
                                                                                         </select>
-                                                                                        <input
-                                                                                            className="data-input"
-                                                                                            inputMode="numeric"
+                                                                                        <select
+                                                                                            className="search-select"
                                                                                             onChange={(event) =>
                                                                                                 setEditableRoutines((current) => {
                                                                                                     const next = [...current]
                                                                                                     const routineExercises = [...next[index].routine_exercises]
                                                                                                     routineExercises[entryIndex] = {
                                                                                                         ...routineExercises[entryIndex],
-                                                                                                        sets: Number(event.target.value || 1),
+                                                                                                        sets: Number(event.target.value),
                                                                                                     }
                                                                                                     next[index] = {
                                                                                                         ...next[index],
@@ -1127,9 +1148,14 @@ export function AdminDashboardPage() {
                                                                                                     return next
                                                                                                 })
                                                                                             }
-                                                                                            type="number"
                                                                                             value={routineExercise.sets}
-                                                                                        />
+                                                                                        >
+                                                                                            {routineSetOptions.map((setCount) => (
+                                                                                                <option key={setCount} value={setCount}>
+                                                                                                    {setCount} series
+                                                                                                </option>
+                                                                                            ))}
+                                                                                        </select>
                                                                                         <textarea
                                                                                             className="data-textarea"
                                                                                             onChange={(event) =>
@@ -1255,9 +1281,8 @@ export function AdminDashboardPage() {
                                                             </option>
                                                         ))}
                                                     </select>
-                                                    <input
-                                                        className="data-input"
-                                                        inputMode="numeric"
+                                                    <select
+                                                        className="search-select"
                                                         onChange={(event) =>
                                                             setRoutineExerciseDrafts((current) => ({
                                                                 ...current,
@@ -1267,13 +1292,18 @@ export function AdminDashboardPage() {
                                                                             routine.id,
                                                                             routine.routine_exercises.length + 1,
                                                                         )),
-                                                                    sets: Number(event.target.value || 1),
+                                                                    sets: Number(event.target.value),
                                                                 },
                                                             }))
                                                         }
-                                                        type="number"
                                                         value={routineExerciseDrafts[routine.id]?.sets ?? 3}
-                                                    />
+                                                    >
+                                                        {routineSetOptions.map((setCount) => (
+                                                            <option key={setCount} value={setCount}>
+                                                                {setCount} series
+                                                            </option>
+                                                        ))}
+                                                    </select>
                                                     <textarea
                                                         className="data-textarea"
                                                         onChange={(event) =>
@@ -1357,8 +1387,8 @@ export function AdminDashboardPage() {
             {activePanel === 'routines' && (
                 <section className="admin-grid section">
                     <article className="admin-card">
-                        <div className="section-kicker">Constructor de rutinas</div>
-                        <h2 className="section-title">Nueva rutina</h2>
+                        <div className="section-kicker">Nueva rutina</div>
+                        <h2 className="section-title">Prepara una sesión nueva</h2>
                         <div className="form-grid">
                             <input
                                 className="data-input"
@@ -1449,7 +1479,7 @@ export function AdminDashboardPage() {
             {activePanel === 'overview' && <section className="section panel">
                 <div className="topbar" style={{ marginBottom: 14 }}>
                     <h2 className="section-title">Vista rápida</h2>
-                    <div className="section-kicker">Estado actual</div>
+                    <div className="section-kicker">Lo que ya ven tus clientes</div>
                 </div>
 
                 {routines.filter((routine) => routine.is_published).length > 0 ? (

@@ -3,6 +3,7 @@ export type ExerciseMetric = 'weight' | 'time' | 'distance' | 'calories'
 export type Exercise = {
     id: string
     name: string
+    muscleGroup?: string
     sets: number
     target: string
     metric: ExerciseMetric

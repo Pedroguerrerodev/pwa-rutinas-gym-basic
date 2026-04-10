@@ -1,4 +1,5 @@
-import { Check, RotateCcw } from 'lucide-react'
+import { Award, Check, RotateCcw } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { usePublicCatalog } from '../hooks/usePublicCatalog'
 import { useRoutineProgress } from '../state/localProgress'
@@ -15,7 +16,18 @@ export function WorkoutPage() {
     const [searchParams, setSearchParams] = useSearchParams()
     const { loading, routines } = usePublicCatalog()
     const routine = routines.find((entry) => entry.slug === slug) ?? null
-    const { progress, resetProgress, toggleCompleted, updateValue } = useRoutineProgress(routine)
+    const { progress, resetProgress, toggleCompleted, togglePr, updateValue } = useRoutineProgress(routine)
+    const [recentPrKey, setRecentPrKey] = useState('')
+    const [prFeedbackMessage, setPrFeedbackMessage] = useState('')
+    const prFeedbackTimeoutRef = useRef<number | null>(null)
+
+    useEffect(() => {
+        return () => {
+            if (prFeedbackTimeoutRef.current) {
+                window.clearTimeout(prFeedbackTimeoutRef.current)
+            }
+        }
+    }, [])
 
     if (loading && !routine) {
         return (
@@ -64,6 +76,31 @@ export function WorkoutPage() {
         const nextParams = new URLSearchParams(searchParams)
         nextParams.delete('day')
         setSearchParams(nextParams, { replace: true })
+    }
+
+    const handleSavePr = (exerciseId: string, setIndex: number, exerciseName: string) => {
+        const saved = togglePr(exerciseId, setIndex)
+
+        if (!saved) {
+            return
+        }
+
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+            navigator.vibrate(35)
+        }
+
+        const key = `${exerciseId}-${setIndex}`
+        setRecentPrKey(key)
+        setPrFeedbackMessage(`PR guardado en ${exerciseName} · serie ${setIndex + 1}`)
+
+        if (prFeedbackTimeoutRef.current) {
+            window.clearTimeout(prFeedbackTimeoutRef.current)
+        }
+
+        prFeedbackTimeoutRef.current = window.setTimeout(() => {
+            setRecentPrKey('')
+            setPrFeedbackMessage('')
+        }, 1400)
     }
 
     return (
@@ -158,12 +195,20 @@ export function WorkoutPage() {
 
             {(totalDays === 1 || activeDay) ? (
                 <section className="exercise-list">
+                    <div className="sr-only" aria-live="polite">
+                        {prFeedbackMessage}
+                    </div>
                     {visibleExercises.length > 0 ? visibleExercises.map((exercise) => (
                         <article className="exercise-card" key={exercise.id}>
                             <div className="exercise-head">
                                 <div className="exercise-badge">{exercise.sets}x</div>
                                 <div>
                                     <h2 className="section-title">{exercise.name}</h2>
+                                    {exercise.muscleGroup ? (
+                                        <div className="badge-row">
+                                            <span className="mini-pill">{exercise.muscleGroup}</span>
+                                        </div>
+                                    ) : null}
                                     {exercise.notes ? <p className="exercise-note">{exercise.notes}</p> : null}
                                 </div>
                             </div>
@@ -173,8 +218,12 @@ export function WorkoutPage() {
                                     const entry = progress[exercise.id] ?? {
                                         values: Array.from({ length: exercise.sets }, () => ''),
                                         completed: Array.from({ length: exercise.sets }, () => false),
+                                        prs: Array.from({ length: exercise.sets }, () => false),
                                     }
                                     const isCompleted = entry.completed[setIndex]
+                                    const hasValue = entry.values[setIndex]?.trim().length > 0
+                                    const prKey = `${exercise.id}-${setIndex}`
+                                    const isPrSaved = recentPrKey === prKey
 
                                     return (
                                         <div className="exercise-row" key={`${exercise.id}-${setIndex}`}>
@@ -185,9 +234,19 @@ export function WorkoutPage() {
                                                 onChange={(event) =>
                                                     updateValue(exercise.id, setIndex, event.target.value)
                                                 }
-                                                placeholder="Anota tu serie"
+                                                placeholder="Tu marca"
                                                 value={entry.values[setIndex]}
                                             />
+                                            <button
+                                                aria-label={`Marcar ${exercise.name} serie ${setIndex + 1} como récord personal`}
+                                                className={isPrSaved ? 'set-pr is-saved' : 'set-pr'}
+                                                disabled={!hasValue}
+                                                onClick={() => handleSavePr(exercise.id, setIndex, exercise.name)}
+                                                type="button"
+                                            >
+                                                <Award size={16} />
+                                                <span>{isPrSaved ? 'Guardado' : 'PR'}</span>
+                                            </button>
                                             <button
                                                 className={isCompleted ? 'set-check is-complete' : 'set-check'}
                                                 onClick={() => toggleCompleted(exercise.id, setIndex)}

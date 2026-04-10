@@ -1,10 +1,10 @@
-import { Dumbbell, LayoutGrid, Sparkles } from 'lucide-react'
+import { BarChart3, Dumbbell, LayoutGrid } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 const tabs = [
-    { to: '/', label: 'Entrenar', icon: Dumbbell },
+    { to: '/', label: 'Inicio', icon: Dumbbell },
     { to: '/explorer', label: 'Explorar', icon: LayoutGrid },
-    { to: '/how-it-works', label: 'Sistema', icon: Sparkles },
+    { to: '/progress', label: 'Progreso', icon: BarChart3 },
 ]
 
 export function MobileTabBar() {

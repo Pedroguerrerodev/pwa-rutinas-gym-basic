@@ -1,9 +1,10 @@
 import {
     ArrowRight,
-    BarChart3,
+    ClipboardList,
     Download,
-    MonitorSmartphone,
+    CloudOff,
     Orbit,
+    Search,
     Share,
     Smartphone,
     SquareStack,
@@ -14,6 +15,30 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { quickLinks } from '../../../data/mock'
 import { usePublicCatalog } from '../hooks/usePublicCatalog'
+
+const progressHighlights = [
+    {
+        number: '01',
+        title: 'Tus marcas se guardan',
+        description:
+            'Cada serie que completes se queda guardada en este dispositivo para que puedas retomar donde lo dejaste.',
+        icon: Search,
+    },
+    {
+        number: '02',
+        title: 'Avanza a tu ritmo',
+        description:
+            'Marca tus series, apunta tu marca y consulta tu avance sin depender de cuentas ni registros externos.',
+        icon: CloudOff,
+    },
+    {
+        number: '03',
+        title: 'Todo queda en tu móvil',
+        description:
+            'Tu progreso se guarda en tu propio móvil para que entrenes con continuidad cada vez que vuelvas a la app.',
+        icon: ClipboardList,
+    },
+]
 
 type BeforeInstallPromptEvent = Event & {
     prompt: () => Promise<void>
@@ -55,12 +80,10 @@ function isStandaloneMode() {
 
 export function HomePage() {
     const { categories, routines } = usePublicCatalog()
-    const featuredRoutine = routines[0]
     const highlightedCategories = categories.filter((category) => category !== 'Todas').slice(0, 4)
     const fastStartRoutines = routines.slice(0, 3)
     const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
     const [isInstalled, setIsInstalled] = useState(() => isStandaloneMode())
-    const [showInstructions, setShowInstructions] = useState(false)
     const device = useMemo(() => detectDevice(), [])
 
     useEffect(() => {
@@ -72,7 +95,6 @@ export function HomePage() {
         const handleAppInstalled = () => {
             setIsInstalled(true)
             setInstallPrompt(null)
-            setShowInstructions(false)
         }
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
@@ -86,7 +108,6 @@ export function HomePage() {
 
     const handleInstall = async () => {
         if (!installPrompt) {
-            setShowInstructions(true)
             return
         }
 
@@ -109,29 +130,42 @@ export function HomePage() {
     const installCopy = isInstalled
         ? 'Ya puedes abrir KINETIC como si fuera una app nativa desde tu pantalla de inicio.'
         : device === 'ios'
-            ? 'Safari no muestra un botón nativo de instalación. Usa Compartir y luego Añadir a pantalla de inicio.'
+            ? 'Puedes poner KINETIC en la pantalla de inicio del iPhone directamente desde Safari, sin pasar por la App Store.'
             : installPrompt
-                ? 'Este navegador ya permite instalar la app. Hazlo ahora para abrir las rutinas como una app real.'
-                : 'Si no aparece el prompt automático, abre el menú del navegador y añade la app a la pantalla de inicio.'
+                ? 'Puedes instalar KINETIC directamente desde el navegador, sin pasar por Play Store, y abrirla como una app más en tu móvil.'
+                : 'Puedes instalar KINETIC directamente desde el navegador, sin pasar por la tienda, añadiéndola a la pantalla de inicio.'
 
-    const installSteps =
-        device === 'ios'
-            ? [
+    const installGuides = [
+        {
+            id: 'ios',
+            label: 'iPhone / iPad',
+            icon: <Share size={16} />,
+            title: 'En iPhone o iPad con Safari',
+            helper:
+                'Si no te aparece ninguna ventana automática, hazlo tú en unos segundos desde Safari.',
+            steps: [
                 'Abre KINETIC en Safari.',
-                'Pulsa el botón Compartir.',
-                'Toca Añadir a pantalla de inicio.',
-            ]
-            : device === 'android'
-                ? [
-                    'Abre KINETIC en Chrome.',
-                    'Pulsa Instalar si aparece el aviso.',
-                    'Si no aparece, abre el menú y pulsa Instalar app o Añadir a pantalla de inicio.',
-                ]
-                : [
-                    'Abre KINETIC desde un navegador compatible.',
-                    'Busca Instalar app en la barra o en el menú.',
-                    'Después abre la app desde el escritorio o el launcher.',
-                ]
+                'Toca Compartir, el botón del cuadrado con la flecha hacia arriba.',
+                'Baja un poco y pulsa Añadir a la pantalla de inicio.',
+                'Confirma y verás el icono en tu pantalla como si fuera una app normal.',
+            ],
+        },
+        {
+            id: 'android',
+            label: 'Android',
+            icon: <Smartphone size={16} />,
+            title: 'En Android con Chrome',
+            helper:
+                'Si no salta la ventana de instalar, puedes hacerlo manualmente desde el menú del navegador.',
+            steps: [
+                'Abre KINETIC en Chrome.',
+                'Toca los 3 puntos de la esquina superior derecha.',
+                'Pulsa Añadir a pantalla de inicio o Instalar aplicación.',
+                'Después toca Añadir para confirmar.',
+                'El icono aparecerá en tu escritorio y la abrirás como una app más.',
+            ],
+        },
+    ]
 
     return (
         <main>
@@ -140,60 +174,11 @@ export function HomePage() {
                 Supera tus <span className="accent-text">límites</span> hoy
             </h1>
             <p className="hero-copy">
-                Rutinas actualizadas en tiempo real, progreso guardado en tu móvil y
-                acceso inmediato desde el QR del gym.
+                Instala la app en tu móvil y empieza a usar las rutinas del gym de la forma más
+                rápida, clara y cómoda desde el primer acceso.
             </p>
 
-            {featuredRoutine ? (
-                <div
-                    className="hero-card"
-                    style={{
-                        ['--hero-gradient' as string]: featuredRoutine.heroGradient,
-                        ['--image-gradient' as string]: featuredRoutine.imageGradient,
-                    }}
-                >
-                    <div className="hero-visual" />
-                    <div className="hero-content">
-                        <div className="badge-row">
-                            <span className="mini-pill">Acceso inmediato</span>
-                            <span className="mini-pill">{featuredRoutine.duration}</span>
-                            <span className="mini-pill">{featuredRoutine.level}</span>
-                            {isInstalled && <span className="mini-pill">Instalada</span>}
-                        </div>
-                        <h2 className="workout-title">{featuredRoutine.title}</h2>
-                        <p className="hero-copy">{featuredRoutine.subtitle}</p>
-                        <div className="hero-actions">
-                            <Link className="primary-button" to={`/routine/${featuredRoutine.slug}`}>
-                                Empezar ahora
-                            </Link>
-                            <Link className="secondary-button" to="/explorer">
-                                Ver catálogo
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <section className="hero-card panel">
-                    <div className="hero-content">
-                        <div className="badge-row">
-                            <span className="mini-pill">Catálogo vacío</span>
-                            {isInstalled && <span className="mini-pill">Instalada</span>}
-                        </div>
-                        <h2 className="workout-title">Todavía no hay rutinas publicadas</h2>
-                        <p className="hero-copy">
-                            Cuando crees nuevas rutinas desde el portal admin y las publiques,
-                            aparecerán aquí automáticamente.
-                        </p>
-                        <div className="hero-actions">
-                            <Link className="secondary-button" to="/explorer">
-                                Abrir catálogo
-                            </Link>
-                        </div>
-                    </div>
-                </section>
-            )}
-
-            <section className="section panel install-panel">
+            <section className="hero-card install-panel">
                 <div className="install-head">
                     <div className="quick-link-icon install-icon">
                         {device === 'ios' ? <Share size={20} /> : <Download size={20} />}
@@ -210,40 +195,68 @@ export function HomePage() {
                     {!isInstalled && (
                         <button className="primary-button" onClick={() => void handleInstall()} type="button">
                             <Download size={18} />
-                            {installPrompt ? 'Instalar ahora' : 'Ver cómo instalar'}
+                            Instalar
                         </button>
                     )}
-                    <button
-                        className="secondary-button"
-                        onClick={() => setShowInstructions((current) => !current)}
-                        type="button"
-                    >
-                        <MonitorSmartphone size={18} />
-                        {showInstructions ? 'Ocultar pasos' : 'Pasos por dispositivo'}
-                    </button>
                 </div>
 
-                {(showInstructions || device === 'ios' || !installPrompt) && !isInstalled && (
-                    <div className="install-guide">
-                        <div className="install-device-pill">
-                            <Smartphone size={16} />
-                            {device === 'ios'
-                                ? 'iPhone / iPad'
-                                : device === 'android'
-                                    ? 'Android'
-                                    : 'Escritorio / otro dispositivo'}
-                        </div>
+                {!isInstalled && (
+                    <>
+                        <p className="metric-copy install-help">
+                            No te ha saltado la ventana de instalar? Debajo te dejamos los pasos claros
+                            para hacerlo manualmente.
+                        </p>
 
-                        <div className="install-steps">
-                            {installSteps.map((step) => (
-                                <div className="install-step" key={step}>
-                                    <span className="install-step-dot" />
-                                    <span>{step}</span>
-                                </div>
-                            ))}
+                        <div className="install-guide">
+                            <div className="install-guide-intro">
+                                Puedes instalarla sin pasar por Play Store ni App Store. Solo necesitas abrir
+                                la web y seguir estos pasos.
+                            </div>
+
+                            <div className="install-guide-grid">
+                                {installGuides.map((guide) => (
+                                    <section className="install-guide-card" key={guide.id}>
+                                        <div className="install-device-pill">
+                                            {guide.icon}
+                                            {guide.label}
+                                        </div>
+
+                                        <h3 className="install-guide-title">{guide.title}</h3>
+                                        <p className="metric-copy install-guide-helper">{guide.helper}</p>
+
+                                        {guide.id === 'android' && (
+                                            <div className="install-route">
+                                                3 puntos {'>'} Añadir a pantalla de inicio
+                                            </div>
+                                        )}
+
+                                        <div className="install-steps">
+                                            {guide.steps.map((step) => (
+                                                <div className="install-step" key={step}>
+                                                    <span className="install-step-dot" />
+                                                    <span>{step}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </section>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    </>
                 )}
+            </section>
+
+            <section className="step-list">
+                {progressHighlights.map(({ number, title, description, icon: Icon }) => (
+                    <article className="step-card" key={number}>
+                        <div className="step-number">{number}</div>
+                        <div className="quick-link-icon" style={{ marginBottom: 12 }}>
+                            <Icon size={20} />
+                        </div>
+                        <h2 className="section-title">{title}</h2>
+                        <p className="body-copy">{description}</p>
+                    </article>
+                ))}
             </section>
 
             <section className="section panel">
@@ -254,7 +267,7 @@ export function HomePage() {
                             <div className="quick-link-icon">
                                 {index === 0 && <ArrowRight size={20} />}
                                 {index === 1 && <TimerReset size={20} />}
-                                {index === 2 && <BarChart3 size={20} />}
+                                {index === 2 && <TimerReset size={20} />}
                             </div>
                             <div>
                                 <div>{item.title}</div>

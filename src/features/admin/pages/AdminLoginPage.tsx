@@ -14,7 +14,7 @@ export function AdminLoginPage() {
     if (loading) {
         return (
             <main>
-                <div className="empty-state">Validando sesión del portal admin...</div>
+                <div className="empty-state">Preparando acceso al panel del gym...</div>
             </main>
         )
     }
@@ -40,13 +40,13 @@ export function AdminLoginPage() {
                 <div className="hero-visual" />
                 <div className="hero-content">
                     <div className="status-pill">
-                        <ShieldCheck size={16} /> Acceso restringido
+                        <ShieldCheck size={16} /> Acceso del equipo
                     </div>
                     <h1 className="hero-title">
-                        Portal <span className="accent-text">admin</span>
+                        Panel de <span className="accent-text">gestión</span>
                     </h1>
                     <p className="hero-copy">
-                        Entra con una cuenta de Supabase Auth para gestionar el catálogo real.
+                        Accede para gestionar rutinas, ejercicios y categorías del gimnasio desde un solo lugar.
                     </p>
 
                     <form className="form-grid section" onSubmit={handleSubmit}>
@@ -54,7 +54,7 @@ export function AdminLoginPage() {
                             autoComplete="email"
                             className="data-input"
                             onChange={(event) => setEmail(event.target.value)}
-                            placeholder="Email de administrador"
+                            placeholder="Email del equipo"
                             type="email"
                             value={email}
                         />
@@ -69,21 +69,21 @@ export function AdminLoginPage() {
 
                         {!isConfigured ? (
                             <div className="empty-state compact-state">
-                                Falta configurar Supabase en el entorno de Vite.
+                                El acceso al panel no está disponible todavía en este entorno.
                             </div>
                         ) : null}
 
                         {error ? <div className="admin-feedback is-error">{error}</div> : null}
                         {session && !isAdmin ? (
                             <div className="admin-feedback is-error">
-                                Esta cuenta no tiene permisos de administrador para este proyecto.
+                                Esta cuenta no tiene acceso al panel de gestión.
                             </div>
                         ) : null}
 
                         <div className="inline-actions">
                             <button className="primary-button" disabled={submitting || !isConfigured} type="submit">
                                 <LockKeyhole size={18} />
-                                {submitting ? 'Entrando...' : 'Entrar al portal'}
+                                {submitting ? 'Entrando...' : 'Entrar al panel'}
                             </button>
                             {session && !isAdmin ? (
                                 <button
@@ -97,15 +97,15 @@ export function AdminLoginPage() {
                                 </button>
                             ) : null}
                             <Link className="secondary-button" to="/">
-                                <ArrowLeft size={18} /> Volver a la app
+                                <ArrowLeft size={18} /> Volver al inicio
                             </Link>
                         </div>
                     </form>
 
                     <div className="install-guide section">
-                        <div className="section-kicker">Setup mínimo</div>
+                        <div className="section-kicker">Acceso interno</div>
                         <p className="metric-copy" style={{ marginBottom: 0 }}>
-                            Si todavía no existe el usuario admin, créalo primero en Supabase Auth y confirma su email si tu proyecto lo exige.
+                            Usa una cuenta autorizada del equipo para entrar y gestionar el contenido del gimnasio.
                         </p>
                     </div>
                 </div>

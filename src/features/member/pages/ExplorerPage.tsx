@@ -41,61 +41,56 @@ export function ExplorerPage() {
         <main>
             <div className="eyebrow">Explorador de rutinas</div>
             <h1 className="hero-title">
-                Encuentra tu <span className="accent-text">disciplina</span>
+                Encuentra tu <span className="accent-text">rutina</span>
             </h1>
             <p className="hero-copy">
-                Catálogo vivo para fuerza, pérdida de peso, funcional, hyrox y más
-                categorías administrables por el equipo del gym.
+                Descubre rutinas para fuerza, pérdida de peso, funcional, hyrox y más objetivos,
+                todas supervisadas por profesionales para entrenar con confianza.
             </p>
 
             {loading && <p className="metric-copy">Sincronizando catálogo...</p>}
 
             <section className="search-shell">
-                <label
-                    className="search-input"
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: '20px 1fr',
-                        gap: 12,
-                        alignItems: 'center',
-                    }}
-                >
-                    <Search size={18} color="currentColor" />
-                    <input
-                        aria-label="Buscar rutina por nombre"
-                        className="search-input"
-                        onChange={(event) => {
-                            const nextValue = event.target.value
-                            startTransition(() => setSearch(nextValue))
-                        }}
-                        placeholder="Buscar por nombre de rutina"
-                        style={{ padding: 0, border: 0, background: 'transparent' }}
-                        value={search}
-                    />
-                </label>
+                <div className="explorer-search-card">
+                    <div className="section-kicker">Encuentra tu rutina por nombre o por objetivo</div>
 
-                <div className="pill-row" role="tablist" aria-label="Categorías">
-                    {categories.map((category) => (
-                        <button
-                            key={category}
-                            className={
-                                category === selectedCategory
-                                    ? 'category-chip active'
-                                    : 'category-chip'
-                            }
-                            onClick={() => setSelectedCategory(category)}
-                            type="button"
-                        >
-                            {category}
-                        </button>
-                    ))}
-                </div>
+                    <label className="search-input-shell">
+                        <Search size={18} color="currentColor" />
+                        <input
+                            aria-label="Buscar rutina por nombre"
+                            className="search-input-field"
+                            onChange={(event) => {
+                                const nextValue = event.target.value
+                                startTransition(() => setSearch(nextValue))
+                            }}
+                            placeholder="Ejemplo: pecho, fuerza, mujer..."
+                            value={search}
+                        />
+                    </label>
 
-                <div className="results-summary">
-                    <span>{filteredRoutines.length} rutinas visibles</span>
-                    <span>
-                        {selectedCategory === 'Todas' ? 'Todas las categorías' : selectedCategory}
-                    </span>
+                    <div className="category-grid" role="tablist" aria-label="Categorías">
+                        {categories.map((category) => (
+                            <button
+                                key={category}
+                                className={
+                                    category === selectedCategory
+                                        ? 'category-chip active'
+                                        : 'category-chip'
+                                }
+                                onClick={() => setSelectedCategory(category)}
+                                type="button"
+                            >
+                                {category}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="results-summary">
+                        <span>{filteredRoutines.length} rutinas visibles</span>
+                        <span>
+                            {selectedCategory === 'Todas' ? 'Todas las categorías' : selectedCategory}
+                        </span>
+                    </div>
                 </div>
             </section>
 

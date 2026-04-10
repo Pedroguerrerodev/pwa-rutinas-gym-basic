@@ -35,6 +35,7 @@ type RoutineRow = {
         exercises: {
             slug: string
             name: string
+            muscle_group: string
             instructions: string
         } | null
     }>
@@ -79,6 +80,7 @@ function mapRoutineRow(row: RoutineRow): Routine {
             return {
                 id: entry.id,
                 name: entry.exercises?.name ?? 'Ejercicio',
+                muscleGroup: entry.exercises?.muscle_group ?? '',
                 sets: entry.sets,
                 target: description,
                 metric: entry.metric,
@@ -135,6 +137,7 @@ async function fetchPublicRoutines() {
                     exercises!inner(
                         slug,
                         name,
+                        muscle_group,
                         instructions
                     )
                 )

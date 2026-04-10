@@ -4,9 +4,25 @@ import type { Routine } from '../../../data/mock'
 type ExerciseProgress = {
     values: string[]
     completed: boolean[]
+    prs: boolean[]
 }
 
 export type RoutineProgress = Record<string, ExerciseProgress>
+
+export type PersonalRecord = {
+    routineId: string
+    routineTitle: string
+    routineSlug: string
+    exerciseId: string
+    exerciseKey: string
+    exerciseName: string
+    muscleGroup: string
+    setNumber: number
+    value: string
+    updatedAt: string
+}
+
+const PERSONAL_RECORDS_STORAGE_KEY = 'kinetic-personal-records:v1'
 
 const emptyRoutine: Routine = {
     id: 'empty-routine',
@@ -26,6 +42,7 @@ function createExerciseProgress(sets: number): ExerciseProgress {
     return {
         values: Array.from({ length: sets }, () => ''),
         completed: Array.from({ length: sets }, () => false),
+        prs: Array.from({ length: sets }, () => false),
     }
 }
 
@@ -43,6 +60,7 @@ function getExerciseProgress(
     return {
         values: Array.from({ length: sets }, (_, index) => existing.values[index] ?? ''),
         completed: Array.from({ length: sets }, (_, index) => Boolean(existing.completed[index])),
+        prs: Array.from({ length: sets }, (_, index) => Boolean(existing.prs?.[index])),
     }
 }
 
@@ -56,6 +74,71 @@ function createInitialProgress(routine: Routine): RoutineProgress {
 
 function getStorageKey(slug: string) {
     return `kinetic-progress:v1:${slug}`
+}
+
+function getExerciseKey(exerciseName: string) {
+    return exerciseName.trim().toLowerCase()
+}
+
+function readPersonalRecordsStorage(): PersonalRecord[] {
+    if (typeof window === 'undefined') {
+        return []
+    }
+
+    try {
+        const rawValue = window.localStorage.getItem(PERSONAL_RECORDS_STORAGE_KEY)
+
+        if (!rawValue) {
+            return []
+        }
+
+        const parsedValue = JSON.parse(rawValue) as PersonalRecord[]
+
+        if (!Array.isArray(parsedValue)) {
+            return []
+        }
+
+        return parsedValue
+            .filter(
+                (record) =>
+                    typeof record?.exerciseKey === 'string' &&
+                    typeof record?.exerciseName === 'string' &&
+                    typeof record?.value === 'string',
+            )
+            .map((record) => ({
+                routineId: record.routineId ?? '',
+                routineTitle: record.routineTitle ?? 'Rutina guardada',
+                routineSlug: record.routineSlug ?? '',
+                exerciseId: record.exerciseId ?? record.exerciseKey,
+                exerciseKey: record.exerciseKey,
+                exerciseName: record.exerciseName,
+                muscleGroup: typeof record.muscleGroup === 'string' ? record.muscleGroup : '',
+                setNumber: typeof record.setNumber === 'number' ? record.setNumber : 1,
+                value: record.value,
+                updatedAt:
+                    typeof record.updatedAt === 'string' && record.updatedAt.length > 0
+                        ? record.updatedAt
+                        : new Date(0).toISOString(),
+            }))
+    } catch {
+        return []
+    }
+}
+
+function writePersonalRecordsStorage(records: PersonalRecord[]) {
+    if (typeof window === 'undefined') {
+        return
+    }
+
+    window.localStorage.setItem(PERSONAL_RECORDS_STORAGE_KEY, JSON.stringify(records))
+}
+
+function upsertPersonalRecord(record: PersonalRecord) {
+    const currentRecords = readPersonalRecordsStorage()
+    const nextRecords = currentRecords.filter((entry) => entry.exerciseKey !== record.exerciseKey)
+
+    nextRecords.unshift(record)
+    writePersonalRecordsStorage(nextRecords)
 }
 
 function readStoredProgress(routine: Routine) {
@@ -85,6 +168,10 @@ function readStoredProgress(routine: Routine) {
                 completed: Array.from(
                     { length: exercise.sets },
                     (_, index) => Boolean(current?.completed?.[index]),
+                ),
+                prs: Array.from(
+                    { length: exercise.sets },
+                    (_, index) => Boolean(current?.prs?.[index]),
                 ),
             }
 
@@ -149,6 +236,46 @@ export function useRoutineProgress(routine: Routine | null) {
         }))
     }
 
+    const togglePr = (exerciseId: string, setIndex: number) => {
+        const exercise = activeRoutine.exercises.find((entry) => entry.id === exerciseId)
+
+        if (!exercise) {
+            return false
+        }
+
+        const currentExerciseProgress = getExerciseProgress(progress, exerciseId, exercise.sets)
+        const currentValue = currentExerciseProgress.values[setIndex]?.trim() ?? ''
+        const exerciseKey = getExerciseKey(exercise.name)
+
+        if (!currentValue) {
+            return false
+        }
+
+        // PR acts as a one-tap save action: always keep the latest pressed value per exercise.
+        upsertPersonalRecord({
+            routineId: activeRoutine.id,
+            routineTitle: activeRoutine.title,
+            routineSlug: activeRoutine.slug,
+            exerciseId: exercise.id,
+            exerciseKey,
+            exerciseName: exercise.name,
+            muscleGroup: exercise.muscleGroup ?? '',
+            setNumber: setIndex + 1,
+            value: currentValue,
+            updatedAt: new Date().toISOString(),
+        })
+
+        setProgress((current) => ({
+            ...current,
+            [exerciseId]: {
+                ...getExerciseProgress(current, exerciseId, exercise.sets),
+                prs: getExerciseProgress(current, exerciseId, exercise.sets).prs.map(() => false),
+            },
+        }))
+
+        return true
+    }
+
     const resetProgress = () => {
         setProgress(createInitialProgress(activeRoutine))
     }
@@ -166,8 +293,15 @@ export function useRoutineProgress(routine: Routine | null) {
         progress,
         updateValue,
         toggleCompleted,
+        togglePr,
         resetProgress,
         totalSets,
         completedSets,
     }
+}
+
+export function getStoredPersonalRecords() {
+    return readPersonalRecordsStorage().sort((left, right) =>
+        right.updatedAt.localeCompare(left.updatedAt),
+    )
 }

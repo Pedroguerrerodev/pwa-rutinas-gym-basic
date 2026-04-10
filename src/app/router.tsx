@@ -4,6 +4,7 @@ import { ADMIN_ROUTE } from './routes'
 import { AdminLayout } from './shells/AdminLayout'
 import { MemberLayout } from './shells/MemberLayout'
 import { AdminAuthProvider } from '../features/admin/auth/AdminAuthContext'
+import { RouteErrorPage, RouteFallbackPage } from './RouteErrorPage'
 
 const HomePage = lazy(async () => {
     const module = await import('../features/member/pages/HomePage')
@@ -60,16 +61,20 @@ function AdminAuthRoot() {
 export const router = createBrowserRouter([
     {
         element: <MemberLayout />,
+        errorElement: <RouteErrorPage />,
         children: [
             { path: '/', element: withSuspense(<HomePage />) },
             { path: '/explorer', element: withSuspense(<ExplorerPage />) },
+            { path: '/progress', element: withSuspense(<HowItWorksPage />) },
             { path: '/how-it-works', element: withSuspense(<HowItWorksPage />) },
             { path: '/routine/:slug', element: withSuspense(<WorkoutPage />) },
+            { path: '*', element: <RouteFallbackPage /> },
         ],
     },
     {
         path: ADMIN_ROUTE,
         element: <AdminAuthRoot />,
+        errorElement: <RouteErrorPage />,
         children: [
             { path: 'login', element: withSuspense(<AdminLoginPage />) },
             {

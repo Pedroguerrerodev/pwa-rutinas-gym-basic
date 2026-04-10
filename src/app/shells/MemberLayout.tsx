@@ -6,7 +6,12 @@ export function MemberLayout() {
     return (
         <div className="app-shell">
             <header className="topbar">
-                <div className="brand">KINETIC</div>
+                <div className="brand-lockup">
+                    <div className="brand-mark-frame" aria-hidden="true">
+                        <img className="brand-mark-image" src="/logo-kinetic.png" alt="" />
+                    </div>
+                    <div className="brand">KINETIC</div>
+                </div>
                 <div className="topbar-actions">
                     <button className="icon-button" type="button" aria-label="Avisos">
                         <Bell size={18} />

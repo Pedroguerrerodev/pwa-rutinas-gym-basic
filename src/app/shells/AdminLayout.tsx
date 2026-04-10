@@ -23,7 +23,12 @@ export function AdminLayout() {
             <header className="topbar">
                 <div>
                     <div className="eyebrow">Dashboard operativo</div>
-                    <div className="brand">KINETIC ADMIN</div>
+                    <div className="brand-lockup">
+                        <div className="brand-mark-frame" aria-hidden="true">
+                            <img className="brand-mark-image" src="/logo-kinetic.png" alt="" />
+                        </div>
+                        <div className="brand">KINETIC ADMIN</div>
+                    </div>
                     <div className="metric-copy">{user?.email ?? 'sesión activa'}</div>
                 </div>
                 <div className="topbar-actions">

@@ -47,6 +47,32 @@ function sortPersonalRecords(records: PersonalRecord[]) {
     })
 }
 
+async function getLogoDataUrl() {
+    const response = await fetch('/logo-kinetic.png')
+
+    if (!response.ok) {
+        throw new Error('No se ha podido cargar el logo para el PDF.')
+    }
+
+    const blob = await response.blob()
+
+    return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+
+        reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+                resolve(reader.result)
+                return
+            }
+
+            reject(new Error('No se ha podido convertir el logo para el PDF.'))
+        }
+
+        reader.onerror = () => reject(new Error('No se ha podido leer el logo para el PDF.'))
+        reader.readAsDataURL(blob)
+    })
+}
+
 export function HowItWorksPage() {
     const personalRecords = useMemo(() => sortPersonalRecords(getStoredPersonalRecords()), [])
     const [recordSearch, setRecordSearch] = useState('')
@@ -78,6 +104,7 @@ export function HowItWorksPage() {
 
         try {
             const { jsPDF } = await import('jspdf')
+            const logoDataUrl = await getLogoDataUrl().catch(() => null)
             const document = new jsPDF({ unit: 'mm', format: 'a4' })
             const pageWidth = document.internal.pageSize.getWidth()
             const pageHeight = document.internal.pageSize.getHeight()
@@ -88,29 +115,68 @@ export function HowItWorksPage() {
             let cursorY = marginTop
             let currentGroup = ''
 
+            const drawHeader = () => {
+                const logoSize = 24
+                const titleX = logoDataUrl ? marginX + logoSize + 6 : marginX
+
+                if (logoDataUrl) {
+                    document.addImage(logoDataUrl, 'PNG', marginX, marginTop - 1, logoSize, logoSize)
+                }
+
+                document.setTextColor(28, 28, 28)
+                document.setFont('helvetica', 'bold')
+                document.setFontSize(18)
+                document.text('KINETIC · Récords personales', titleX, marginTop + 7)
+
+                document.setTextColor(90, 90, 90)
+                document.setFont('helvetica', 'normal')
+                document.setFontSize(10)
+                document.text('Tus mejores marcas ordenadas por grupo muscular', titleX, marginTop + 13)
+                document.text(
+                    `Exportado el ${formatPersonalRecordDate(new Date().toISOString())}`,
+                    titleX,
+                    marginTop + 18,
+                )
+
+                document.setDrawColor(215, 215, 215)
+                document.line(marginX, marginTop + 24, pageWidth - marginX, marginTop + 24)
+
+                document.setTextColor(28, 28, 28)
+
+                return marginTop + 32
+            }
+
+            const drawFooter = (pageNumber: number, totalPages: number) => {
+                const footerY = pageHeight - 10
+
+                document.setDrawColor(225, 225, 225)
+                document.line(marginX, pageHeight - 18, pageWidth - marginX, pageHeight - 18)
+
+                document.setFont('helvetica', 'normal')
+                document.setFontSize(9)
+                document.setTextColor(95, 95, 95)
+                document.text('Desarrollado por Pedro Guerrero Pinta', marginX, footerY)
+                document.textWithLink('https://portfoliominimal-nu.vercel.app/', marginX, footerY + 5, {
+                    url: 'https://portfoliominimal-nu.vercel.app/',
+                })
+                document.text(`${pageNumber}/${totalPages}`, pageWidth - marginX, footerY, {
+                    align: 'right',
+                })
+
+                document.setTextColor(28, 28, 28)
+            }
+
             const ensureSpace = (requiredHeight: number) => {
                 if (cursorY + requiredHeight <= pageHeight - marginTop) {
                     return
                 }
 
                 document.addPage()
-                cursorY = marginTop
+                cursorY = drawHeader()
                 currentGroup = ''
             }
 
-            document.setFont('helvetica', 'bold')
-            document.setFontSize(16)
-            document.text('KINETIC · Récords personales', marginX, cursorY)
-            cursorY += 8
-
-            document.setFont('helvetica', 'normal')
-            document.setFontSize(10)
-            document.text(
-                `Exportado el ${formatPersonalRecordDate(new Date().toISOString())}`,
-                marginX,
-                cursorY,
-            )
-            cursorY += 10
+            cursorY = drawHeader()
 
             personalRecords.forEach((record) => {
                 const groupLabel = getPersonalRecordGroupLabel(record)
@@ -153,6 +219,13 @@ export function HowItWorksPage() {
                 cursorY += blockSpacing
             })
 
+            const totalPages = document.getNumberOfPages()
+
+            for (let pageNumber = 1; pageNumber <= totalPages; pageNumber += 1) {
+                document.setPage(pageNumber)
+                drawFooter(pageNumber, totalPages)
+            }
+
             document.save('kinetic-records-personales.pdf')
         } finally {
             setIsExportingPdf(false)
@@ -176,10 +249,6 @@ export function HowItWorksPage() {
                     Datos guardados localmente
                 </div>
                 <div className="support-grid">
-                    <div className="support-item">
-                        <span>PR guardados</span>
-                        <strong>{personalRecords.length}</strong>
-                    </div>
                     <div className="support-item">
                         <span>Ejercicios con PR</span>
                         <strong>{uniqueExerciseCount}</strong>

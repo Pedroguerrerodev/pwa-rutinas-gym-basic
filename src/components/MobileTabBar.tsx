@@ -1,9 +1,10 @@
-import { BarChart3, Dumbbell, LayoutGrid } from 'lucide-react'
+import { BarChart3, Dumbbell, Heart, LayoutGrid } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 const tabs = [
     { to: '/', label: 'Inicio', icon: Dumbbell },
     { to: '/explorer', label: 'Explorar', icon: LayoutGrid },
+    { to: '/my-routines', label: 'Mis rutinas', icon: Heart },
     { to: '/progress', label: 'Progreso', icon: BarChart3 },
 ]
 

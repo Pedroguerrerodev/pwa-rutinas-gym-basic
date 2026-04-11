@@ -18,6 +18,12 @@ const ExplorerPage = lazy(async () => {
     return { default: module.ExplorerPage }
 })
 
+const MyRoutinesPage = lazy(async () => {
+    const module = await import('../features/member/pages/MyRoutinesPage')
+
+    return { default: module.MyRoutinesPage }
+})
+
 const HowItWorksPage = lazy(async () => {
     const module = await import('../features/member/pages/HowItWorksPage')
 
@@ -65,6 +71,7 @@ export const router = createBrowserRouter([
         children: [
             { path: '/', element: withSuspense(<HomePage />) },
             { path: '/explorer', element: withSuspense(<ExplorerPage />) },
+            { path: '/my-routines', element: withSuspense(<MyRoutinesPage />) },
             { path: '/progress', element: withSuspense(<HowItWorksPage />) },
             { path: '/how-it-works', element: withSuspense(<HowItWorksPage />) },
             { path: '/routine/:slug', element: withSuspense(<WorkoutPage />) },

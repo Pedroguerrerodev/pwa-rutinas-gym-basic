@@ -9,6 +9,11 @@ type ExerciseProgress = {
 
 export type RoutineProgress = Record<string, ExerciseProgress>
 
+export type RoutineSessionSnapshot = {
+    savedAt: string
+    progress: RoutineProgress
+}
+
 export type PersonalRecord = {
     routineId: string
     routineTitle: string
@@ -23,6 +28,7 @@ export type PersonalRecord = {
 }
 
 const PERSONAL_RECORDS_STORAGE_KEY = 'kinetic-personal-records:v1'
+export const MAX_PROGRESS_VALUE_LENGTH = 40
 
 const emptyRoutine: Routine = {
     id: 'empty-routine',
@@ -76,8 +82,47 @@ function getStorageKey(slug: string) {
     return `kinetic-progress:v1:${slug}`
 }
 
+function getLastSessionStorageKey(slug: string) {
+    return `kinetic-progress-last:v1:${slug}`
+}
+
 function getExerciseKey(exerciseName: string) {
     return exerciseName.trim().toLowerCase()
+}
+
+function normalizeProgressValue(value: string) {
+    return value.slice(0, MAX_PROGRESS_VALUE_LENGTH)
+}
+
+function buildRoutineProgress(routine: Routine, source?: RoutineProgress | null): RoutineProgress {
+    return routine.exercises.reduce<RoutineProgress>((accumulator, exercise) => {
+        const current = source?.[exercise.id]
+
+        accumulator[exercise.id] = {
+            values: Array.from(
+                { length: exercise.sets },
+                (_, index) => normalizeProgressValue(current?.values?.[index] ?? ''),
+            ),
+            completed: Array.from(
+                { length: exercise.sets },
+                (_, index) => Boolean(current?.completed?.[index]),
+            ),
+            prs: Array.from(
+                { length: exercise.sets },
+                (_, index) => Boolean(current?.prs?.[index]),
+            ),
+        }
+
+        return accumulator
+    }, {})
+}
+
+function hasMeaningfulProgress(progress: RoutineProgress) {
+    return Object.values(progress).some((entry) =>
+        entry.values.some((value) => value.trim().length > 0) ||
+        entry.completed.some(Boolean) ||
+        entry.prs.some(Boolean),
+    )
 }
 
 function readPersonalRecordsStorage(): PersonalRecord[] {
@@ -114,7 +159,7 @@ function readPersonalRecordsStorage(): PersonalRecord[] {
                 exerciseName: record.exerciseName,
                 muscleGroup: typeof record.muscleGroup === 'string' ? record.muscleGroup : '',
                 setNumber: typeof record.setNumber === 'number' ? record.setNumber : 1,
-                value: record.value,
+                value: normalizeProgressValue(record.value),
                 updatedAt:
                     typeof record.updatedAt === 'string' && record.updatedAt.length > 0
                         ? record.updatedAt
@@ -141,6 +186,41 @@ function upsertPersonalRecord(record: PersonalRecord) {
     writePersonalRecordsStorage(nextRecords)
 }
 
+function readLastSessionSnapshot(routine: Routine): RoutineSessionSnapshot | null {
+    if (typeof window === 'undefined') {
+        return null
+    }
+
+    try {
+        const rawValue = window.localStorage.getItem(getLastSessionStorageKey(routine.slug))
+
+        if (!rawValue) {
+            return null
+        }
+
+        const parsedValue = JSON.parse(rawValue) as RoutineSessionSnapshot
+
+        if (!parsedValue || typeof parsedValue !== 'object' || typeof parsedValue.savedAt !== 'string') {
+            return null
+        }
+
+        return {
+            savedAt: parsedValue.savedAt,
+            progress: buildRoutineProgress(routine, parsedValue.progress),
+        }
+    } catch {
+        return null
+    }
+}
+
+function writeLastSessionSnapshot(slug: string, snapshot: RoutineSessionSnapshot) {
+    if (typeof window === 'undefined') {
+        return
+    }
+
+    window.localStorage.setItem(getLastSessionStorageKey(slug), JSON.stringify(snapshot))
+}
+
 function readStoredProgress(routine: Routine) {
     const fallback = createInitialProgress(routine)
 
@@ -157,26 +237,7 @@ function readStoredProgress(routine: Routine) {
 
         const parsedValue = JSON.parse(rawValue) as RoutineProgress
 
-        return routine.exercises.reduce<RoutineProgress>((accumulator, exercise) => {
-            const current = parsedValue[exercise.id]
-
-            accumulator[exercise.id] = {
-                values: Array.from(
-                    { length: exercise.sets },
-                    (_, index) => current?.values?.[index] ?? '',
-                ),
-                completed: Array.from(
-                    { length: exercise.sets },
-                    (_, index) => Boolean(current?.completed?.[index]),
-                ),
-                prs: Array.from(
-                    { length: exercise.sets },
-                    (_, index) => Boolean(current?.prs?.[index]),
-                ),
-            }
-
-            return accumulator
-        }, {})
+        return buildRoutineProgress(routine, parsedValue)
     } catch {
         return fallback
     }
@@ -187,9 +248,13 @@ export function useRoutineProgress(routine: Routine | null) {
     const [progress, setProgress] = useState<RoutineProgress>(() =>
         readStoredProgress(activeRoutine),
     )
+    const [lastSessionSnapshot, setLastSessionSnapshot] = useState<RoutineSessionSnapshot | null>(() =>
+        readLastSessionSnapshot(activeRoutine),
+    )
 
     useEffect(() => {
         setProgress(readStoredProgress(activeRoutine))
+        setLastSessionSnapshot(readLastSessionSnapshot(activeRoutine))
     }, [activeRoutine])
 
     useEffect(() => {
@@ -207,12 +272,14 @@ export function useRoutineProgress(routine: Routine | null) {
             return
         }
 
+        const nextValue = normalizeProgressValue(value)
+
         setProgress((current) => ({
             ...current,
             [exerciseId]: {
                 ...getExerciseProgress(current, exerciseId, exercise.sets),
                 values: getExerciseProgress(current, exerciseId, exercise.sets).values.map((entry, index) =>
-                    index === setIndex ? value : entry,
+                    index === setIndex ? nextValue : entry,
                 ),
             },
         }))
@@ -244,7 +311,7 @@ export function useRoutineProgress(routine: Routine | null) {
         }
 
         const currentExerciseProgress = getExerciseProgress(progress, exerciseId, exercise.sets)
-        const currentValue = currentExerciseProgress.values[setIndex]?.trim() ?? ''
+        const currentValue = normalizeProgressValue(currentExerciseProgress.values[setIndex] ?? '').trim()
         const exerciseKey = getExerciseKey(exercise.name)
 
         if (!currentValue) {
@@ -269,7 +336,7 @@ export function useRoutineProgress(routine: Routine | null) {
             ...current,
             [exerciseId]: {
                 ...getExerciseProgress(current, exerciseId, exercise.sets),
-                prs: getExerciseProgress(current, exerciseId, exercise.sets).prs.map(() => false),
+                prs: getExerciseProgress(current, exerciseId, exercise.sets).prs.map((_, index) => index === setIndex),
             },
         }))
 
@@ -277,6 +344,16 @@ export function useRoutineProgress(routine: Routine | null) {
     }
 
     const resetProgress = () => {
+        if (hasMeaningfulProgress(progress)) {
+            const snapshot = {
+                savedAt: new Date().toISOString(),
+                progress: buildRoutineProgress(activeRoutine, progress),
+            }
+
+            writeLastSessionSnapshot(activeRoutine.slug, snapshot)
+            setLastSessionSnapshot(snapshot)
+        }
+
         setProgress(createInitialProgress(activeRoutine))
     }
 
@@ -291,6 +368,7 @@ export function useRoutineProgress(routine: Routine | null) {
 
     return {
         progress,
+        lastSessionSnapshot,
         updateValue,
         toggleCompleted,
         togglePr,

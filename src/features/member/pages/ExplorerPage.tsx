@@ -1,10 +1,13 @@
 import { Search } from 'lucide-react'
 import { startTransition, useDeferredValue, useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
+import { RoutineCard } from '../components/RoutineCard'
 import { usePublicCatalog } from '../hooks/usePublicCatalog'
+import { toggleFavoriteRoutine, useFavoriteRoutines } from '../state/favoriteRoutines'
 
 export function ExplorerPage() {
     const { categories, loading, routines } = usePublicCatalog()
+    const favoriteSlugs = useFavoriteRoutines()
     const [searchParams, setSearchParams] = useSearchParams()
     const initialCategory = searchParams.get('category') || 'Todas'
     const initialSearch = searchParams.get('q') || ''
@@ -97,29 +100,12 @@ export function ExplorerPage() {
             <section className="routine-grid">
                 {filteredRoutines.length > 0 ? (
                     filteredRoutines.map((routine) => (
-                        <article
-                            className="routine-card"
+                        <RoutineCard
+                            isFavorite={favoriteSlugs.includes(routine.slug)}
                             key={routine.id}
-                            style={{ ['--hero-gradient' as string]: routine.heroGradient }}
-                        >
-                            <div className="routine-card-content">
-                                <div className="badge-row">
-                                    <span className="mini-pill">{routine.category}</span>
-                                    <span className="mini-pill">{routine.level}</span>
-                                </div>
-                                <h2 className="card-title">{routine.title}</h2>
-                                <div className="routine-meta">
-                                    <span>{routine.duration}</span>
-                                    {routine.goal ? <span>{routine.goal}</span> : null}
-                                </div>
-                                <p className="card-copy">{routine.subtitle}</p>
-                                <div className="card-footer">
-                                    <Link className="ghost-button" to={`/routine/${routine.slug}`}>
-                                        Empezar
-                                    </Link>
-                                </div>
-                            </div>
-                        </article>
+                            onToggleFavorite={toggleFavoriteRoutine}
+                            routine={routine}
+                        />
                     ))
                 ) : (
                     <div className="empty-state">

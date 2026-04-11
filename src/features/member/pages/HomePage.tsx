@@ -273,7 +273,6 @@ export function HomePage() {
                                 <div>{item.title}</div>
                                 <div className="metric-copy">{item.helper}</div>
                             </div>
-                            <ArrowRight size={18} color="currentColor" />
                         </article>
                     ))}
                 </div>

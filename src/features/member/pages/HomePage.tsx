@@ -88,7 +88,6 @@ export function HomePage() {
 
     useEffect(() => {
         const handleBeforeInstallPrompt = (event: Event) => {
-            event.preventDefault()
             setInstallPrompt(event as BeforeInstallPromptEvent)
         }
 
@@ -108,6 +107,10 @@ export function HomePage() {
 
     const handleInstall = async () => {
         if (!installPrompt) {
+            document.getElementById('install-guide')?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            })
             return
         }
 
@@ -207,7 +210,7 @@ export function HomePage() {
                             para hacerlo manualmente.
                         </p>
 
-                        <div className="install-guide">
+                        <div className="install-guide" id="install-guide">
                             <div className="install-guide-intro">
                                 Puedes instalarla sin pasar por Play Store ni App Store. Solo necesitas abrir
                                 la web y seguir estos pasos.

@@ -75,6 +75,20 @@
         transform: translateX(-36px);
     }
 
+    @keyframes k-grid-drift {
+        0% {
+            transform: translate3d(0, 0, 0);
+        }
+
+        50% {
+            transform: translate3d(-8px, 6px, 0);
+        }
+
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
     to {
         transform: translateX(430px);
     }
@@ -160,12 +174,14 @@
 html {
     min-height: 100%;
     background: #050505;
+    overscroll-behavior: none;
 }
 
 body {
     margin: 0;
-    min-height: 100svh;
+    min-height: 100dvh;
     background: transparent;
+    overscroll-behavior: none;
 }
 
 button,
@@ -190,14 +206,14 @@ img {
 }
 
 #root {
-    min-height: 100svh;
+    min-height: 100dvh;
 }
 
 .app-shell {
     width: min(100%, var(--content-width));
-    min-height: 100svh;
+    min-height: 100dvh;
     margin: 0 auto;
-    padding: 18px 16px 104px;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 16px calc(118px + env(safe-area-inset-bottom, 0px));
     position: relative;
     z-index: 1;
     isolation: isolate;
@@ -1226,21 +1242,38 @@ img {
 .bottom-nav {
     position: fixed;
     left: 50%;
-    bottom: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     transform: translateX(-50%);
-    width: min(calc(100% - 20px), calc(var(--content-width) - 16px));
-    padding: 8px 10px;
-    border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(14, 14, 14, 0.65);
+    width: min(calc(100% - 22px), calc(var(--content-width) - 10px));
+    padding: 10px 10px calc(12px + env(safe-area-inset-bottom, 0px));
+    border-radius: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background:
+        linear-gradient(180deg, rgba(23, 23, 23, 0.92), rgba(10, 10, 10, 0.88)),
+        rgba(14, 14, 14, 0.88);
     box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.4),
-        0 1.5px 0 rgba(255, 255, 255, 0.06) inset;
-    backdrop-filter: blur(24px) saturate(140%);
-    -webkit-backdrop-filter: blur(24px) saturate(140%);
+        0 14px 40px rgba(0, 0, 0, 0.42),
+        0 1px 0 rgba(255, 255, 255, 0.04) inset,
+        0 -12px 32px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(22px) saturate(125%);
+    -webkit-backdrop-filter: blur(22px) saturate(125%);
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     z-index: 20;
+}
+
+.bottom-nav::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(255, 226, 122, 0.08), transparent 32%, transparent 72%, rgba(255, 255, 255, 0.03));
+    mask: linear-gradient(#000, #000) content-box, linear-gradient(#000, #000);
+    mask-composite: exclude;
+    -webkit-mask: linear-gradient(#000, #000) content-box, linear-gradient(#000, #000);
+    -webkit-mask-composite: xor;
+    padding: 1px;
 }
 
 .bottom-link {
@@ -1249,16 +1282,16 @@ img {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    padding: 12px 4px 10px;
-    border-radius: 16px;
-    color: rgba(244, 241, 234, 0.4);
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
+    gap: 5px;
+    padding: 11px 4px 9px;
+    border-radius: 18px;
+    color: rgba(244, 241, 234, 0.46);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.055em;
     text-transform: uppercase;
     text-align: center;
-    transition: color 260ms ease, transform 260ms ease;
+    transition: color 220ms ease, transform 220ms ease, background-color 220ms ease;
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -1283,24 +1316,45 @@ img {
 /* ---- Active tab ---- */
 .bottom-link.active {
     color: var(--accent);
+    background: linear-gradient(180deg, rgba(255, 211, 28, 0.08), rgba(255, 211, 28, 0.02));
 }
 
 .bottom-link.active svg {
-    filter: drop-shadow(0 0 6px rgba(255, 226, 122, 0.35));
+    transform: translateY(-1px);
+    filter: drop-shadow(0 0 8px rgba(255, 226, 122, 0.42));
 }
 
 /* Glow dot indicator */
 .bottom-link.active::after {
     content: '';
     position: absolute;
-    bottom: 3px;
+    bottom: 4px;
     left: 50%;
     transform: translateX(-50%);
-    width: 4px;
-    height: 4px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     background: var(--accent);
-    box-shadow: 0 0 8px rgba(255, 226, 122, 0.5);
+    box-shadow: 0 0 10px rgba(255, 226, 122, 0.58);
+}
+
+.kinetic-grid {
+    opacity: 0.86;
+}
+
+.kinetic-spark {
+    transform-box: fill-box;
+    transform-origin: center;
+    filter: drop-shadow(0 0 6px rgba(255, 226, 122, 0.2));
+}
+
+.kinetic-spark-strong {
+    filter: drop-shadow(0 0 8px rgba(255, 226, 122, 0.34));
+}
+
+.kinetic-ambient {
+    animation: k-grid-drift 14s linear infinite;
+    opacity: 0.95;
 }
 
 .empty-state {

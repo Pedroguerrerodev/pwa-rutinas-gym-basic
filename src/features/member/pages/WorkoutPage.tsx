@@ -56,7 +56,7 @@ export function WorkoutPage() {
 
     if (loading && !routine) {
         return (
-            <main>
+            <main className="member-page member-workout-page">
                 <div className="empty-state">Cargando rutina...</div>
             </main>
         )
@@ -64,7 +64,7 @@ export function WorkoutPage() {
 
     if (!routine) {
         return (
-            <main>
+            <main className="member-page member-workout-page">
                 <div className="empty-state">
                     La rutina no existe o todavía no está publicada.
                 </div>
@@ -147,7 +147,7 @@ export function WorkoutPage() {
     }
 
     return (
-        <main>
+        <main className="member-page member-workout-page">
             {isResetDialogOpen ? (
                 <div
                     aria-modal="true"

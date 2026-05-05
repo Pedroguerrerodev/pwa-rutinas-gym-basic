@@ -20,6 +20,12 @@ import {
     type AdminRoutine,
     type AdminRoutineExercise,
 } from '../hooks/useAdminCatalog'
+import {
+    parseCategoryDraft,
+    parseExerciseDraft,
+    parseRoutineDraft,
+    parseRoutineExerciseDraft,
+} from '../lib/adminSchemas'
 
 const DEFAULT_HERO_GRADIENT =
     'linear-gradient(150deg, rgba(9, 24, 21, 0.55), rgba(0, 0, 0, 0.92)), radial-gradient(circle at top, rgba(255, 211, 28, 0.18), transparent 26%)'
@@ -47,16 +53,6 @@ const muscleGroupOptions = [
     'Abdomen',
     'Flexibilidad',
 ] as const
-
-function slugify(value: string) {
-    return value
-        .trim()
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-}
 
 function buildCategoryDraft(): CategoryDraft {
     return {
@@ -113,16 +109,8 @@ function getRoutineDescription(subtitle: string, goal: string) {
     return subtitle || goal
 }
 
-function getNormalizedRoutineDescription(subtitle: string, goal: string) {
-    return subtitle.trim() || goal.trim()
-}
-
 function getExerciseDescription(target: string, notes: string) {
     return notes || target
-}
-
-function getNormalizedExerciseDescription(target: string, notes: string) {
-    return notes.trim() || target.trim()
 }
 
 function getRoutineTotalDays(durationText: string, entries: Array<{ day_number: number }>) {
@@ -266,6 +254,7 @@ export function AdminDashboardPage() {
     const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>('Todas')
     const [routineSearch, setRoutineSearch] = useState('')
     const [routineExerciseSearch, setRoutineExerciseSearch] = useState<Record<string, string>>({})
+    const [validationError, setValidationError] = useState<string | null>(null)
     const deferredExerciseSearch = useDeferredValue(exerciseSearch)
     const deferredRoutineSearch = useDeferredValue(routineSearch)
 
@@ -344,18 +333,19 @@ export function AdminDashboardPage() {
     }, [deferredExerciseSearch, editableExercises, selectedMuscleGroup])
 
     const handleCreateCategory = async () => {
-        const name = categoryDraft.name.trim()
-        const slug = slugify(name)
+        setValidationError(null)
+        const parsed = parseCategoryDraft({
+            name: categoryDraft.name,
+            sort_order: categoryDraft.sort_order,
+            is_active: categoryDraft.is_active,
+        })
 
-        if (!name || !slug) {
+        if (!parsed.success) {
+            setValidationError(parsed.error)
             return
         }
 
-        const nextError = await createCategory({
-            ...categoryDraft,
-            name,
-            slug,
-        })
+        const nextError = await createCategory(parsed.data)
 
         if (!nextError) {
             setCategoryDraft(buildCategoryDraft())
@@ -363,19 +353,20 @@ export function AdminDashboardPage() {
     }
 
     const handleCreateExercise = async () => {
-        const name = exerciseDraft.name.trim()
-        const slug = slugify(name)
+        setValidationError(null)
+        const parsed = parseExerciseDraft({
+            name: exerciseDraft.name,
+            muscle_group: exerciseDraft.muscle_group as (typeof muscleGroupOptions)[number],
+            default_metric: exerciseDraft.default_metric,
+            instructions: exerciseDraft.instructions,
+        })
 
-        if (!name || !slug) {
+        if (!parsed.success) {
+            setValidationError(parsed.error)
             return
         }
 
-        const nextError = await createExercise({
-            ...exerciseDraft,
-            name,
-            slug,
-            instructions: '',
-        })
+        const nextError = await createExercise(parsed.data)
 
         if (!nextError) {
             setExerciseDraft(buildExerciseDraft())
@@ -383,23 +374,25 @@ export function AdminDashboardPage() {
     }
 
     const handleCreateRoutine = async () => {
-        const title = routineDraft.title.trim()
-        const slug = slugify(title)
-        const description = getNormalizedRoutineDescription(routineDraft.subtitle, routineDraft.goal)
+        setValidationError(null)
+        const parsed = parseRoutineDraft({
+            category_id: routineDraft.category_id,
+            title: routineDraft.title,
+            subtitle: routineDraft.subtitle,
+            goal: routineDraft.goal,
+            duration_text: routineDraft.duration_text,
+            level: routineDraft.level as (typeof routineLevelOptions)[number],
+            hero_gradient: routineDraft.hero_gradient,
+            image_gradient: routineDraft.image_gradient,
+            is_published: routineDraft.is_published,
+        })
 
-        if (!title || !slug || !routineDraft.category_id) {
+        if (!parsed.success) {
+            setValidationError(parsed.error)
             return
         }
 
-        const nextError = await createRoutine({
-            ...routineDraft,
-            title,
-            slug,
-            subtitle: description,
-            goal: description,
-            duration_text: normalizeRoutineDays(routineDraft.duration_text),
-            level: routineDraft.level.trim(),
-        })
+        const nextError = await createRoutine(parsed.data)
 
         if (!nextError) {
             setRoutineDraft(buildRoutineDraft(categories[0]?.id ?? ''))
@@ -473,6 +466,7 @@ export function AdminDashboardPage() {
                 </button>
             </div>
 
+            {validationError ? <div className="admin-feedback is-error section">{validationError}</div> : null}
             {error ? <div className="admin-feedback is-error section">{error}</div> : null}
             {feedback ? <div className="admin-feedback section">{feedback}</div> : null}
             {loading ? <div className="empty-state section">Actualizando contenido del panel...</div> : null}
@@ -635,14 +629,21 @@ export function AdminDashboardPage() {
                                 </label>
                                 <button
                                     className="secondary-button"
-                                    onClick={() =>
-                                        void updateCategory(category.id, {
-                                            slug: slugify(category.name),
+                                    onClick={() => {
+                                        setValidationError(null)
+                                        const parsed = parseCategoryDraft({
                                             name: category.name,
                                             sort_order: category.sort_order,
                                             is_active: category.is_active,
                                         })
-                                    }
+
+                                        if (!parsed.success) {
+                                            setValidationError(parsed.error)
+                                            return
+                                        }
+
+                                        void updateCategory(category.id, parsed.data)
+                                    }}
                                     type="button"
                                 >
                                     <Save size={18} />
@@ -749,15 +750,22 @@ export function AdminDashboardPage() {
                                 <div className="inline-actions admin-inline-actions">
                                     <button
                                         className="secondary-button"
-                                        onClick={() =>
-                                            void updateExercise(exercise.id, {
-                                                slug: slugify(exercise.name),
+                                        onClick={() => {
+                                            setValidationError(null)
+                                            const parsed = parseExerciseDraft({
                                                 name: exercise.name,
-                                                muscle_group: exercise.muscle_group,
+                                                muscle_group: exercise.muscle_group as (typeof muscleGroupOptions)[number],
                                                 default_metric: exercise.default_metric,
                                                 instructions: exercise.instructions,
                                             })
-                                        }
+
+                                            if (!parsed.success) {
+                                                setValidationError(parsed.error)
+                                                return
+                                            }
+
+                                            void updateExercise(exercise.id, parsed.data)
+                                        }}
                                         type="button"
                                     >
                                         <Save size={18} />
@@ -980,20 +988,25 @@ export function AdminDashboardPage() {
                                             <button
                                                 className="secondary-button"
                                                 onClick={() => {
-                                                    const description = getNormalizedRoutineDescription(routine.subtitle, routine.goal)
-
-                                                    return void updateRoutine(routine.id, {
+                                                    setValidationError(null)
+                                                    const parsed = parseRoutineDraft({
                                                         category_id: routine.category_id,
-                                                        slug: slugify(routine.title),
                                                         title: routine.title,
-                                                        subtitle: description,
-                                                        goal: description,
-                                                        duration_text: normalizeRoutineDays(routine.duration_text),
-                                                        level: routine.level,
+                                                        subtitle: routine.subtitle,
+                                                        goal: routine.goal,
+                                                        duration_text: routine.duration_text,
+                                                        level: routine.level as (typeof routineLevelOptions)[number],
                                                         hero_gradient: routine.hero_gradient,
                                                         image_gradient: routine.image_gradient,
                                                         is_published: routine.is_published,
                                                     })
+
+                                                    if (!parsed.success) {
+                                                        setValidationError(parsed.error)
+                                                        return
+                                                    }
+
+                                                    return void updateRoutine(routine.id, parsed.data)
                                                 }}
                                                 type="button"
                                             >
@@ -1184,18 +1197,24 @@ export function AdminDashboardPage() {
                                                                                         <button
                                                                                             className="secondary-button"
                                                                                             onClick={() => {
-                                                                                                const description = getNormalizedExerciseDescription(routineExercise.target, routineExercise.notes)
-
-                                                                                                return void updateRoutineExercise(routineExercise.id, {
+                                                                                                setValidationError(null)
+                                                                                                const parsed = parseRoutineExerciseDraft({
                                                                                                     routine_id: routineExercise.routine_id,
                                                                                                     exercise_id: routineExercise.exercise_id,
                                                                                                     day_number: routineExercise.day_number || 1,
                                                                                                     sort_order: routineExercise.sort_order,
                                                                                                     sets: routineExercise.sets,
-                                                                                                    target: description,
+                                                                                                    target: routineExercise.target,
                                                                                                     metric: routineExercise.metric,
-                                                                                                    notes: description,
+                                                                                                    notes: routineExercise.notes,
                                                                                                 })
+
+                                                                                                if (!parsed.success) {
+                                                                                                    setValidationError(parsed.error)
+                                                                                                    return
+                                                                                                }
+
+                                                                                                return void updateRoutineExercise(routineExercise.id, parsed.data)
                                                                                             }}
                                                                                             type="button"
                                                                                         >
@@ -1332,28 +1351,30 @@ export function AdminDashboardPage() {
                                                     <button
                                                         className="primary-button"
                                                         onClick={async () => {
+                                                            setValidationError(null)
                                                             const draft =
                                                                 routineExerciseDrafts[routine.id] ??
                                                                 buildRoutineExerciseDraft(
                                                                     routine.id,
                                                                     routine.routine_exercises.length + 1,
                                                                 )
-                                                            const description = getNormalizedExerciseDescription(draft.target, draft.notes)
-
-                                                            if (!draft.exercise_id || !description) {
-                                                                return
-                                                            }
-
-                                                            const nextError = await createRoutineExercise({
+                                                            const parsed = parseRoutineExerciseDraft({
                                                                 routine_id: draft.routine_id,
                                                                 exercise_id: draft.exercise_id,
                                                                 day_number: draft.day_number || 1,
-                                                                sets: draft.sets,
-                                                                target: description,
-                                                                metric: draft.metric,
-                                                                notes: description,
                                                                 sort_order: routine.routine_exercises.length + 1,
+                                                                sets: draft.sets,
+                                                                target: draft.target,
+                                                                metric: draft.metric,
+                                                                notes: draft.notes,
                                                             })
+
+                                                            if (!parsed.success) {
+                                                                setValidationError(parsed.error)
+                                                                return
+                                                            }
+
+                                                            const nextError = await createRoutineExercise(parsed.data)
 
                                                             if (!nextError) {
                                                                 setRoutineExerciseDrafts((current) => ({

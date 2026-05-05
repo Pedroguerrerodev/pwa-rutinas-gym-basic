@@ -13,7 +13,7 @@ export function MyRoutinesPage() {
         .sort((left, right) => (favoriteSlugOrder.get(left.slug) ?? 0) - (favoriteSlugOrder.get(right.slug) ?? 0))
 
     return (
-        <main>
+        <main className="member-page member-favorites-page">
             <div className="eyebrow">Acceso rápido</div>
             <h1 className="hero-title">
                 Mis <span className="accent-text">rutinas</span>

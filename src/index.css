@@ -174,6 +174,7 @@
 html {
     min-height: 100%;
     background: #050505;
+    scrollbar-gutter: stable;
 }
 
 body {
@@ -226,6 +227,136 @@ img {
 
     .app-shell {
         padding: calc(14px + env(safe-area-inset-top, 0px)) 16px calc(118px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+@media (min-width: 1100px) {
+    .app-shell.member-shell {
+        --member-shell-max: 1380px;
+        --member-shell-padding: 28px;
+        --member-rail-width: 220px;
+        width: min(100%, 1380px);
+        min-height: 100vh;
+        padding: 28px 28px 36px;
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr);
+        grid-auto-rows: min-content;
+        gap: 26px 34px;
+        align-content: start;
+        align-items: start;
+    }
+
+    .app-shell.member-shell>.topbar {
+        grid-column: 1 / -1;
+        margin-bottom: 0;
+        padding: 0 6px;
+    }
+
+    .app-shell.member-shell>main {
+        grid-column: 2;
+        min-width: 0;
+    }
+
+    .app-shell.member-shell>.bottom-nav {
+        position: fixed;
+        top: 110px;
+        left: max(var(--member-shell-padding), calc((100vw - var(--member-shell-max)) / 2 + var(--member-shell-padding)));
+        bottom: auto;
+        transform: none;
+        width: var(--member-rail-width);
+        padding: 10px;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        border-radius: 32px;
+        box-shadow:
+            0 18px 40px rgba(0, 0, 0, 0.28),
+            0 1px 0 rgba(255, 255, 255, 0.04) inset,
+            0 -10px 24px rgba(0, 0, 0, 0.16) inset;
+    }
+
+    .app-shell.member-shell>.bottom-nav .bottom-link {
+        min-height: 74px;
+        padding: 14px 12px;
+        border-radius: 22px;
+        justify-items: start;
+        transition: color 220ms ease, background-color 220ms ease, box-shadow 220ms ease;
+    }
+
+    .app-shell.member-shell>.bottom-nav .bottom-link span {
+        font-size: 0.74rem;
+    }
+
+    .app-shell.member-shell>.bottom-nav .bottom-link:active,
+    .app-shell.member-shell>.bottom-nav .bottom-link.active,
+    .app-shell.member-shell>.bottom-nav .bottom-link.active svg {
+        transform: none;
+    }
+
+    .app-shell.member-shell>.bottom-nav .bottom-link.active {
+        box-shadow:
+            0 14px 28px rgba(255, 211, 28, 0.16),
+            0 1px 0 rgba(255, 255, 255, 0.4) inset,
+            0 -8px 18px rgba(0, 0, 0, 0.05) inset;
+    }
+
+    .member-page {
+        max-width: none;
+    }
+
+    .member-page> :nth-child(-n+3) {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+
+    .member-page .hero-title {
+        animation: none;
+    }
+
+    .member-home-page .step-list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .member-home-page .quick-links,
+    .member-home-page .support-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .member-home-page .launcher-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .member-explorer-page .explorer-search-card {
+        padding: 24px;
+    }
+
+    .member-explorer-page .routine-grid,
+    .member-favorites-page .routine-grid,
+    .member-progress-page .personal-record-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .member-progress-page .support-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .member-workout-page .exercise-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1440px) {
+    .app-shell.member-shell {
+        --member-shell-max: 1480px;
+        --member-rail-width: 236px;
+        width: min(100%, 1480px);
+        grid-template-columns: 236px minmax(0, 1fr);
+    }
+
+    .member-explorer-page .routine-grid,
+    .member-favorites-page .routine-grid,
+    .member-progress-page .personal-record-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
 
@@ -691,9 +822,171 @@ img {
     gap: 12px;
 }
 
+.home-signature {
+    display: grid;
+    gap: 12px;
+    padding: 16px 18px;
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at top left, rgba(255, 211, 28, 0.09), transparent 24%),
+        linear-gradient(90deg, rgba(255, 211, 28, 0.04), transparent 36%),
+        rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    color: rgba(255, 255, 255, 0.68);
+    box-shadow:
+        0 14px 34px rgba(0, 0, 0, 0.16),
+        0 1px 0 rgba(255, 255, 255, 0.03) inset;
+}
+
+.home-signature-kicker {
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.home-signature-kicker {
+    color: rgba(255, 255, 255, 0.44);
+    margin-bottom: 6px;
+}
+
+.home-signature-brand {
+    min-width: 0;
+}
+
+.home-signature-copy {
+    font-family: var(--display);
+    font-size: clamp(1.35rem, 4.5vw, 1.95rem);
+    letter-spacing: 0.05em;
+    line-height: 1;
+    color: rgba(255, 247, 224, 0.98);
+}
+
+.home-signature-note {
+    margin: 8px 0 0;
+    max-width: 42ch;
+    color: rgba(255, 255, 255, 0.58);
+    line-height: 1.4;
+    font-size: 0.92rem;
+}
+
+.home-signature-actions {
+    display: grid;
+    gap: 10px;
+}
+
+.home-signature-meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.home-signature-meta-item {
+    display: grid;
+    gap: 4px;
+    min-height: 58px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.home-signature-meta-item strong {
+    font-size: 0.88rem;
+    color: rgba(255, 247, 224, 0.92);
+    font-weight: 700;
+}
+
+.home-signature-meta-label {
+    color: rgba(255, 255, 255, 0.42);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.home-signature-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    justify-content: center;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 211, 28, 0.18);
+    background: rgba(255, 211, 28, 0.08);
+    color: rgba(255, 241, 188, 0.96);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+}
+
+.progress-quote-card {
+    position: relative;
+    padding: 2px 0 0 18px;
+    border-left: 2px solid rgba(255, 211, 28, 0.34);
+    background: transparent;
+}
+
+.progress-quote-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -2px;
+    width: 2px;
+    height: 34px;
+    background: linear-gradient(180deg, var(--accent-strong), rgba(255, 211, 28, 0));
+}
+
+.progress-quote-kicker {
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.44);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.progress-quote-text {
+    margin: 0;
+    max-width: 30ch;
+    color: rgba(255, 247, 224, 0.92);
+    font-family: var(--display);
+    font-size: clamp(1.18rem, 3.6vw, 1.48rem);
+    line-height: 1.04;
+    letter-spacing: 0.03em;
+    text-wrap: balance;
+}
+
+.progress-quote-author {
+    margin-top: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
 @media (min-width: 760px) {
     .install-guide-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .home-signature {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        padding: 18px 20px;
+    }
+
+    .home-signature-actions {
+        min-width: 340px;
+    }
+
+    .progress-quote-card {
+        padding-left: 20px;
+    }
+
+    .progress-quote-text {
+        max-width: 36ch;
     }
 }
 

@@ -3,6 +3,7 @@ import {
     ClipboardList,
     Download,
     CloudOff,
+    ExternalLink,
     Orbit,
     Search,
     Share,
@@ -171,7 +172,7 @@ export function HomePage() {
     ]
 
     return (
-        <main>
+        <main className="member-page member-home-page">
             <div className="eyebrow">Sin registro, empieza ahora</div>
             <h1 className="hero-title">
                 Supera tus <span className="accent-text">límites</span> hoy
@@ -347,6 +348,38 @@ export function HomePage() {
                         No hay rutinas visibles. Publica una desde admin para mostrarla al usuario.
                     </div>
                 )}
+            </section>
+
+            <section className="home-signature section">
+                <div className="home-signature-brand">
+                    <div className="home-signature-kicker">Producto digital</div>
+                    <div className="home-signature-copy">KINETIC</div>
+                    <p className="home-signature-note">Desarrollado por Pedro Guerrero Pinta.</p>
+                </div>
+                <div className="home-signature-actions">
+                    <div className="home-signature-meta">
+                        <div className="home-signature-meta-item">
+                            <span className="home-signature-meta-label">Release</span>
+                            <strong>05 May 2026</strong>
+                        </div>
+                        <div className="home-signature-meta-item">
+                            <span className="home-signature-meta-label">Versión</span>
+                            <strong>V 0.1.2</strong>
+                        </div>
+                        <div className="home-signature-meta-item">
+                            <span className="home-signature-meta-label">Formato</span>
+                            <strong>PWA</strong>
+                        </div>
+                    </div>
+                    <a
+                        className="home-signature-link"
+                        href="https://portfoliominimal-nu.vercel.app/"
+                        rel="noreferrer"
+                        target="_blank"
+                    >
+                        Portfolio profesional <ExternalLink size={16} />
+                    </a>
+                </div>
             </section>
         </main>
     )

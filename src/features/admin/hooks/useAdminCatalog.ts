@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { ExerciseMetric } from '../../../data/mock'
 import { hasSupabaseEnv, supabase } from '../../../lib/supabase'
 
@@ -145,7 +145,7 @@ export function useAdminCatalog(enabled: boolean) {
     const [feedback, setFeedback] = useState<string | null>(null)
     const [savingKey, setSavingKey] = useState<string | null>(null)
 
-    const reload = async () => {
+    const reload = useCallback(async () => {
         if (!enabled || !supabase || !hasSupabaseEnv) {
             setLoading(false)
             return
@@ -170,11 +170,11 @@ export function useAdminCatalog(enabled: boolean) {
         } finally {
             setLoading(false)
         }
-    }
+    }, [enabled])
 
     useEffect(() => {
         void reload()
-    }, [enabled])
+    }, [reload])
 
     const runMutation = async (key: string, action: () => Promise<unknown>, successMessage: string) => {
         if (!supabase || !hasSupabaseEnv) {

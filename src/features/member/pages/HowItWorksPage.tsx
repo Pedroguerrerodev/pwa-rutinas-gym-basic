@@ -1,6 +1,7 @@
 import { Award, Download, Search, ShieldCheck } from 'lucide-react'
 import { startTransition, useDeferredValue, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { getDailyMotivationalQuote } from '../state/dailyMotivationalQuote'
 import { getStoredPersonalRecords, type PersonalRecord } from '../state/localProgress'
 
 function formatPersonalRecordDate(value: string) {
@@ -75,6 +76,7 @@ async function getLogoDataUrl() {
 
 export function HowItWorksPage() {
     const personalRecords = useMemo(() => sortPersonalRecords(getStoredPersonalRecords()), [])
+    const dailyQuote = useMemo(() => getDailyMotivationalQuote(), [])
     const [recordSearch, setRecordSearch] = useState('')
     const [isExportingPdf, setIsExportingPdf] = useState(false)
     const deferredRecordSearch = useDeferredValue(recordSearch)
@@ -233,7 +235,7 @@ export function HowItWorksPage() {
     }
 
     return (
-        <main>
+        <main className="member-page member-progress-page">
             <div className="eyebrow">Progreso</div>
             <h1 className="hero-title">
                 Tus <span className="accent-text">récords personales</span>
@@ -242,6 +244,12 @@ export function HowItWorksPage() {
                 Consulta, busca y revisa los PR que has ido guardando en tu dispositivo mientras
                 entrenas.
             </p>
+
+            <section className="progress-quote-card section" aria-label="Cita del día">
+                <div className="progress-quote-kicker">Cita del día</div>
+                <blockquote className="progress-quote-text">“{dailyQuote.quote}”</blockquote>
+                <div className="progress-quote-author">{dailyQuote.author}</div>
+            </section>
 
             <section className="section panel">
                 <div className="status-pill">

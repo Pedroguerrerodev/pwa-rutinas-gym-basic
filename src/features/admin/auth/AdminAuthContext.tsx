@@ -31,7 +31,7 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
                 return
             }
 
-            const { data: adminRows, error: selectError } = await supabase
+            const { data: adminRows } = await supabase
                 .from('admin_users')
                 .select('user_id')
                 .eq('user_id', nextSession.user.id)
@@ -45,19 +45,13 @@ export function AdminAuthProvider({ children }: PropsWithChildren) {
                 return
             }
 
-            const { error: insertError } = await supabase.from('admin_users').insert({
-                user_id: nextSession.user.id,
-                email: nextSession.user.email ?? '',
-            })
-
             if (isMounted) {
-                setIsAdmin(!insertError && !selectError)
+                setIsAdmin(false)
                 setLoading(false)
             }
         }
 
         if (!supabase || !hasSupabaseEnv) {
-            setLoading(false)
             return
         }
 

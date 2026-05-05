@@ -41,7 +41,7 @@ export function ExplorerPage() {
     })
 
     return (
-        <main>
+        <main className="member-page member-explorer-page">
             <div className="eyebrow">Explorador de rutinas</div>
             <h1 className="hero-title">
                 Encuentra tu <span className="accent-text">rutina</span>

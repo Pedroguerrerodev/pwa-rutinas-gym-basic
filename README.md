@@ -334,8 +334,6 @@ Estado del MVP:
 - Tests automatizados sobre lógica crítica del proyecto.
 - Proyecto preparado para generar build de producción.
 
-En conjunto, el proyecto queda en un estado válido para demostración, revisión académica y presentación como proyecto final del máster.
-
 ## Calidad técnica aplicada
 
 Como parte del cierre del proyecto se han reforzado varios aspectos orientados a entrega académica y mantenibilidad:
@@ -347,8 +345,6 @@ Como parte del cierre del proyecto se han reforzado varios aspectos orientados a
 - Control de acceso admin apoyado en Supabase y tabla `admin_users`.
 
 ## Estado final para la entrega
-
-El proyecto queda preparado para una entrega académica en la que se pueda valorar con claridad:
 
 - una propuesta de producto real y coherente,
 - una aplicación funcional con área pública y portal admin,

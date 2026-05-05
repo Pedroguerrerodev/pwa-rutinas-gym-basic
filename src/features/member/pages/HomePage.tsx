@@ -15,6 +15,12 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { quickLinks } from '../../../data/mock'
+import {
+    clearDeferredInstallPrompt,
+    getDeferredInstallPrompt,
+    subscribeToInstallPrompt,
+    type BeforeInstallPromptEvent,
+} from '../../../lib/pwaInstall'
 import { usePublicCatalog } from '../hooks/usePublicCatalog'
 
 const progressHighlights = [
@@ -40,11 +46,6 @@ const progressHighlights = [
         icon: ClipboardList,
     },
 ]
-
-type BeforeInstallPromptEvent = Event & {
-    prompt: () => Promise<void>
-    userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
-}
 
 function detectDevice() {
     if (typeof window === 'undefined') {
@@ -83,25 +84,22 @@ export function HomePage() {
     const { categories, routines } = usePublicCatalog()
     const highlightedCategories = categories.filter((category) => category !== 'Todas').slice(0, 4)
     const fastStartRoutines = routines.slice(0, 3)
-    const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+    const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(() =>
+        getDeferredInstallPrompt(),
+    )
     const [isInstalled, setIsInstalled] = useState(() => isStandaloneMode())
     const device = useMemo(() => detectDevice(), [])
 
     useEffect(() => {
-        const handleBeforeInstallPrompt = (event: Event) => {
-            setInstallPrompt(event as BeforeInstallPromptEvent)
-        }
-
         const handleAppInstalled = () => {
             setIsInstalled(true)
-            setInstallPrompt(null)
         }
 
-        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+        const unsubscribeInstallPrompt = subscribeToInstallPrompt(setInstallPrompt)
         window.addEventListener('appinstalled', handleAppInstalled)
 
         return () => {
-            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+            unsubscribeInstallPrompt()
             window.removeEventListener('appinstalled', handleAppInstalled)
         }
     }, [])
@@ -119,8 +117,10 @@ export function HomePage() {
         const choice = await installPrompt.userChoice
 
         if (choice.outcome === 'accepted') {
-            setInstallPrompt(null)
+            setIsInstalled(true)
         }
+
+        clearDeferredInstallPrompt()
     }
 
     const installTitle = isInstalled

@@ -1,5 +1,11 @@
 # KINETIC
 
+Proyecto desplegado: https://pwa-rutinas-gym-basic.vercel.app/
+ADMIN: https://pwa-rutinas-gym-basic.vercel.app/kinetic-admin-portal
+
+USUARIO  Y CONTRASEÑA PARA PROBAR EL PROYECTO:
+Estan en el Cierre de la presentación.
+
 KINETIC es una PWA mobile-first para gimnasio con área pública para socios y portal admin para gestionar el catálogo de ejercicios y rutinas.
 
 Este proyecto forma parte del Trabajo de Fin de Máster en Desarrollo con IA y nace de un caso real vinculado a DestinoFit, gimnasio de mi localidad ([destinofit.es](https://destinofit.es)) y también proyecto desarrollado por mí. La PWA se ha trabajado en paralelo con el objetivo de digitalizar la entrega, consulta y seguimiento básico de rutinas de entrenamiento desde el móvil, dentro de una necesidad real detectada en el propio gimnasio. Aunque todavía no está siendo utilizada por clientes reales por falta de tiempo para completar su implantación, el proyecto está planteado como una solución funcional, demostrable y orientada a uso real. El desarrollo se ha realizado con apoyo de ChatGPT 5.4 como herramienta principal de asistencia en programación, documentación y validación técnica.
